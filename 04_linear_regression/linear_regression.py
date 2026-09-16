@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from pathlib import Path    
-
+# 配置 matplotlib 支持中文显示（避免 CJK 字形缺失警告）
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'SimSun']
+plt.rcParams['axes.unicode_minus'] = False   # 修复负号显示为方块的问题
 # ===== 数据集说明 =====
 # data1 = ex1data1.txt（单特征，2 列）
 #   第0列：人口 population
