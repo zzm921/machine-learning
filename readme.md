@@ -1,6 +1,6 @@
 # Machine Learning 学习仓库
 
-吴恩达机器学习课程实践代码：从 NumPy / Pandas / Matplotlib 基础，到线性回归、逻辑回归、神经网络、多分类与多标签分类的完整学习路径。每个模块都保留「数据 → 模型 → 训练 → 可视化」的完整链路，并附课程核心概念速查。
+吴恩达机器学习课程实践代码：从 NumPy / Pandas / Matplotlib 基础，到线性回归、逻辑回归、神经网络、多分类与多标签分类、卷积神经网络的完整学习路径。每个模块都保留「数据 → 模型 → 训练 → 可视化」的完整链路；每个章节（目录）另配一份知识卡片（见「知识卡片索引」），并附课程核心概念速查。
 
 ## 目录结构
 
@@ -18,6 +18,28 @@
 | | multi_label_classification.py | 多标签：一张图同时判断 4 个属性（多个 sigmoid） |
 | | multi_class_vs_multi_label.ipynb | 多分类与多标签的对照笔记 |
 | | ex3data1.mat | 手写数字数据集，5000 张 20×20 灰度图 |
+| `09_cnn` | prepare_data.py | 数据集准备：下载 MNIST / CIFAR-10 并保存为 npz |
+| | cnn_number.py | 手写数字识别：CNN 处理 MNIST 灰度图（28×28×1） |
+| | cnn_cifar10.py | 彩色图片分类：CNN 处理 CIFAR-10（32×32×3） |
+| | cnn.ipynb | CNN 训练过程 notebook |
+| | cnn_evolution.md | 卷积神经网络演进史知识卡片（逐代拆解） |
+| | data/ | MNIST 与 CIFAR-10 的 npz 数据文件 |
+
+## 知识卡片索引
+
+每个模块目录内配有一份 `*_notes.md` 知识卡片，结构统一：**本章定位 → 知识地图 → 核心知识点卡片 → 易错点 / 常见坑 → 与相邻章节的联系**（框架式骨架，不贴实现代码）。
+
+| 章节 | 知识卡片 | 主题 |
+|---|---|---|
+| 01 | `01_numpy/numpy_notes.md` | ndarray、向量化、广播、拷贝 vs 视图 |
+| 02 | `02_pandas/pandas_notes.md` | Series / DataFrame、iloc / loc、筛选、分组、合并 |
+| 03 | `03_matplotlib/matplotlib_notes.md` | 绘图流程、plot 参数、图例、决策边界可视化套路 |
+| 04 | `04_linear_regression/linear_regression_notes.md` | 假设函数、特征缩放、代价函数、梯度下降 |
+| 05 | `05_logistic_regression/logistic_regression_notes.md` | sigmoid、交叉熵、决策边界、多项式特征、L2 正则化 |
+| 06 | `06_forward_propagation/forward_propagation_notes.md` | 神经元、单层 dense、循环实现 vs 矩阵实现 |
+| 07 | `07_neural_network/neural_network_notes.md` | XOR、隐藏层、激活函数、训练流程 |
+| 08 | `08_mutil_class/mutil_class_notes.md` | 多分类 softmax / 多标签 sigmoid、指标坑 |
+| 09 | `09_cnn/cnn_notes.md` | 卷积 / 池化、层数规律、灰度 vs 彩色、数据准备 |
 
 ## 环境依赖
 
@@ -107,6 +129,16 @@ pip install -r requirements.txt
 - 指标坑：多标签**不能**直接用 `metrics=['accuracy']`（Keras 会按多分类逻辑用 argmax 比较，结果失真），要用 `BinaryAccuracy` 逐标签判断对错
 - 评估补充：逐元素准确率必须和「全零预测」基线对照（4 个标签正例比例约 0.5/0.5/0.4/0.4，全预测 0 也能拿到约 0.55）；再看「每个样本命中几个标签」的分布是否与真实一致
 - 正则化手段：EarlyStopping（验证损失连续若干轮不降就停，并回滚到最优权重）
+
+### 09 卷积神经网络（CNN）
+
+- 动机：全连接必须先把图 Flatten 成一维，会丢掉像素的空间关系；卷积用**局部连接 + 权值共享**保留空间结构
+- 核心层：`Conv2D`（卷积核滑动，不带 padding 时输出边长 = 输入 − 核 + 1）→ `MaxPooling2D`（2×2 取最大、尺寸减半，带来平移不变性）→ `Flatten` → `Dropout` → `Dense` + `softmax`
+- 层数规律：用「**尺寸倒推法**」——每池化一次尺寸减半，28→14→7→3 最多池化 3 次，卷积块数量存在上限；尺寸减半时通道翻倍（32→64）
+- 灰度 vs 彩色（MNIST vs CIFAR-10）三处不同：输入通道 1 vs 3、是否需手动补通道维、第一层卷积核深度；**第二层起输入通道由上一层 filters 决定，与原始图片通道数无关**
+- 数据准备：`prepare_data.py` 统一下载 + 校验 + 存 npz（保存原始 0~255 像素，归一化留到训练脚本）；训练时把像素归一化到 [0,1] 并补通道维成 (N, H, W, C)
+- 难度预期：MNIST 5 轮可达约 99%；CIFAR-10 更难（彩色、类间相似），约 70% 属正常水平
+- 演进史见同目录 `cnn_evolution.md`（LeNet → AlexNet → VGG → GoogLeNet → ResNet → … → ViT / ConvNeXt）
 
 ## 吴恩达课程核心概念速查
 
@@ -223,8 +255,14 @@ python 07_neural_network/neural_network.py
 python 08_mutil_class/mutil_class.py
 python 08_mutil_class/multi_label_classification.py
 
+# 09 CNN（先跑 prepare_data.py 准备数据，首次运行会联网下载并缓存）
+python 09_cnn/prepare_data.py            # 准备 MNIST
+python 09_cnn/prepare_data.py cifar10    # 准备 CIFAR-10
+python 09_cnn/cnn_number.py              # MNIST 灰度图训练
+python 09_cnn/cnn_cifar10.py             # CIFAR-10 彩色图训练
+
 # 运行 notebook
 jupyter notebook 05_logistic_regression/regularized_logistic_regression.ipynb
 ```
 
-> 08 目录需要 `scipy` 与 `scikit-learn`；07、08 需要 `tensorflow`。脚本内的 `plt.show()` 会依次弹出多个图形窗口，逐个关闭即可。
+> 08 目录需要 `scipy` 与 `scikit-learn`；07、08、09 需要 `tensorflow`。09 的数据集由 `tf.keras.datasets` 提供，首次运行 `prepare_data.py` 会联网下载并缓存到 `~/.keras/datasets`。脚本内的 `plt.show()` 会依次弹出多个图形窗口，逐个关闭即可。
